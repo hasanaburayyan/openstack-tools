@@ -16,7 +16,6 @@ limitations under the License.
 package cmd
 
 import (
-	"fmt"
 	ServerTools "github.com/hasanaburayyan/openstack-tools/cmd/serverTools"
 	"github.com/spf13/cobra"
 )
@@ -35,27 +34,25 @@ to quickly create a Cobra application.`,
 		serverName, _ := cmd.Flags().GetString("name")
 		imageName, _ := cmd.Flags().GetString("image")
 		flavorName, _ := cmd.Flags().GetString("flavor")
+		volumeName, _ := cmd.Flags().GetString("volumeName")
+		serverClient := ServerTools.GetOSClient()
+		volumeClient := ServerTools.GetBlockStorageClient()
 
-		fmt.Printf("create called with \nname: %s\nimage: %s\nflavor: %s\n", serverName, imageName, flavorName)
+		server := ServerTools.CreateServer(serverClient, serverName, imageName, flavorName)
 
-		client := ServerTools.GetOSClient()
-		ServerTools.CreateServer(client, serverName, imageName, flavorName)
-
-
+		if volumeName != "" {
+			volume := ServerTools.CreateVolume(volumeClient, volumeName)
+			ServerTools.AttachVolume(serverClient, volume, server)
+		}
 	},
 }
 
-
-
-
-
 func init() {
-
 
 	createCmd.PersistentFlags().StringVarP(&image, "image", "i", "", "Image to use")
 	createCmd.PersistentFlags().StringVarP(&flavor, "flavor", "f", "", "Flavor to use")
 	createCmd.PersistentFlags().StringVarP(&name, "name", "n", "", "Name Of Server")
-
+	createCmd.PersistentFlags().StringVarP(&volumeName, "volumeName", "v", "", "Name of volume")
 	createCmd.MarkPersistentFlagRequired("image")
 	createCmd.MarkPersistentFlagRequired("flavor")
 	createCmd.MarkPersistentFlagRequired("name")

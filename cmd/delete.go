@@ -17,6 +17,9 @@ package cmd
 
 import (
 	"fmt"
+
+	"github.com/gophercloud/gophercloud/openstack/blockstorage/v2/volumes"
+	"github.com/gophercloud/gophercloud/openstack/compute/v2/servers"
 	ServerTools "github.com/hasanaburayyan/openstack-tools/cmd/serverTools"
 	"github.com/spf13/cobra"
 )
@@ -32,14 +35,26 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		serverId, _ := cmd.Flags().GetString("id")
-		fmt.Printf("deleting server %s\n", serverId)
-		client := ServerTools.GetOSClient()
-		ServerTools.DeleteServer(client, serverId)
+		serverID, _ := cmd.Flags().GetString("id")
+		fmt.Printf("deleting server %s\n", serverID)
+		serverClient := ServerTools.GetOSClient()
+		volumeClient := ServerTools.GetBlockStorageClient()
+		server, _ := servers.Get(serverClient, serverID).Extract()
+		ServerTools.DeleteServer(serverClient, serverID)
+		deleteVolume, _ := cmd.Flags().GetBool("delete-volume")
+		if deleteVolume {
+			deleteOpts := volumes.DeleteOpts{
+				Cascade: true,
+			}
+			volumes.Delete(volumeClient, server.AttachedVolumes[0].ID, deleteOpts)
+			volumes.WaitForStatus(volumeClient, server.AttachedVolumes[0].ID, "", 600)
+			fmt.Println("Volume was deleted")
+		}
 	},
 }
 
 var id string
+var deleteVolume bool
 
 func init() {
 	serverCmd.AddCommand(deleteCmd)
@@ -54,5 +69,6 @@ func init() {
 	// is called directly, e.g.:
 	// deleteCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	deleteCmd.Flags().StringVar(&id, "id", "", "The ID of the server you want to delete")
+	deleteCmd.Flags().BoolP("delete-volume", "d", false, "Passed if you wish to delete the volume attached to the server")
 	deleteCmd.MarkFlagRequired("id")
 }

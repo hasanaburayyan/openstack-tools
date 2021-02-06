@@ -35,9 +35,10 @@ to quickly create a Cobra application.`,
 }
 
 var (
-	name string
-	image string
-	flavor string
+	name       string
+	image      string
+	flavor     string
+	volumeName string
 )
 
 func init() {
@@ -48,9 +49,6 @@ func init() {
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
 	// serverCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-
-
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
