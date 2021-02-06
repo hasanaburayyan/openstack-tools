@@ -1,14 +1,16 @@
 package ServerTools
 
 import (
-"fmt"
-"github.com/gophercloud/gophercloud"
-"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/keypairs"
-"github.com/gophercloud/gophercloud/openstack/compute/v2/servers"
-"log"
+	"fmt"
+	"github.com/gophercloud/gophercloud"
+	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/keypairs"
+	"github.com/gophercloud/gophercloud/openstack/compute/v2/servers"
+	"html/template"
+	"log"
+	"os"
 )
 
-func ListServersInCurrentTenant(client *gophercloud.ServiceClient) {
+func ListServersInCurrentTenant(client *gophercloud.ServiceClient, t string) {
 	// Options for listing servers
 	listOpts := servers.ListOpts{
 		AllTenants: false,
@@ -29,8 +31,38 @@ func ListServersInCurrentTenant(client *gophercloud.ServiceClient) {
 	}
 
 	// Print out ever server by name
+	//fmt.Println("Server Name \t\t\t||\t\tImage\t\t\t||\t\tFlavor\t\t\t\t||\t\tNetworks")
+	//
+	//for i := 0; i < 200; i ++ {
+	//	fmt.Print("=")
+	//}
+	//
+	//fmt.Println()
+	var temp string
+	if t == "" {
+		temp = "{{.Name}}\t\t||\t\t{{index .Image `id`}}\t\t||\t\t{{index .Flavor `id`}}\n"
+	} else {
+		temp = t + "\n"
+	}
+
+
 	for _, server := range allServers {
-		fmt.Printf("Name: %s, Image: %s, Flavor: %s, Networks: %s\n", server.Name, server.Image["id"], server.Flavor["id"], server.Addresses)
+		tmpl, err := template.New("Server").Parse(temp)
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = tmpl.Execute(os.Stdout, server)
+		if err != nil {
+			log.Fatal(err)
+		}
+		//fmt.Printf("%s\t\t||\t%s\t||\t%s\t||\t", server.Name, server.Image["id"], server.Flavor["id"])
+		//var networks string
+		//for k, v := range server.Addresses {
+		//	re := regexp.MustCompile("([0-9]{1,3}[.]?){4}")
+		//	match := re.Find([]byte(fmt.Sprintf("%s", v)))
+		//	networks += fmt.Sprintf("%s : %s ", k, match)
+		//}
+		//fmt.Printf("{ %s }\n", networks)
 	}
 }
 
