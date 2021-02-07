@@ -1,11 +1,14 @@
 package ServerTools
 
 import (
-"fmt"
-"github.com/gophercloud/gophercloud"
-"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/keypairs"
-"github.com/gophercloud/gophercloud/openstack/compute/v2/servers"
-"log"
+	"fmt"
+	"log"
+
+	"github.com/gophercloud/gophercloud"
+	"github.com/gophercloud/gophercloud/openstack/blockstorage/v1/volumes"
+	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/keypairs"
+	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/volumeattach"
+	"github.com/gophercloud/gophercloud/openstack/compute/v2/servers"
 )
 
 func ListServersInCurrentTenant(client *gophercloud.ServiceClient) {
@@ -50,7 +53,6 @@ func ListAllKeypairs(client *gophercloud.ServiceClient) {
 	}
 }
 
-
 func DeleteServer(client *gophercloud.ServiceClient, serverId string) {
 	err := servers.Delete(client, serverId).ExtractErr()
 	if err != nil {
@@ -61,10 +63,10 @@ func DeleteServer(client *gophercloud.ServiceClient, serverId string) {
 	fmt.Printf("server %s deleted!", serverId)
 }
 
-func CreateServer(client *gophercloud.ServiceClient, serverName, imageName, flavorName string) {
+func CreateServer(client *gophercloud.ServiceClient, serverName, imageName, flavorName string) *servers.Server {
 	serverCreateOpts := servers.CreateOpts{
-		Name: serverName,
-		ImageRef: imageName,
+		Name:      serverName,
+		ImageRef:  imageName,
 		FlavorRef: flavorName,
 		Networks: []servers.Network{
 			servers.Network{UUID: "6353f4fd-0ec8-43cb-aedd-d575d8db1721"},
@@ -76,7 +78,7 @@ func CreateServer(client *gophercloud.ServiceClient, serverName, imageName, flav
 
 	createOpts := keypairs.CreateOptsExt{
 		CreateOptsBuilder: serverCreateOpts,
-		KeyName: "opskey",
+		KeyName:           "opskey",
 	}
 
 	server, err := servers.Create(client, createOpts).Extract()
@@ -86,7 +88,33 @@ func CreateServer(client *gophercloud.ServiceClient, serverName, imageName, flav
 
 	fmt.Println("Waiting For server to transition to ACTIVE, will timeout in 600 seconds")
 	servers.WaitForStatus(client, server.ID, "ACTIVE", 600)
-	fmt.Printf("server %s created!", server.ID)
+	fmt.Printf("server %s created!\n", server.ID)
 
-	fmt.Println(server)
+	return server
+}
+
+func CreateVolume(client *gophercloud.ServiceClient, volumeName string) *volumes.Volume {
+	opts := volumes.CreateOpts{Size: 10, Name: volumeName, VolumeType: "d4559dc6-3abc-49a1-aed6-a2c4f0b4ceac"}
+	vol, err := volumes.Create(client, opts).Extract()
+
+	if err != nil {
+		log.Panic(err)
+	}
+	volumes.WaitForStatus(client, vol.ID, "available", 600)
+	fmt.Printf("volume %s created!\n", volumeName)
+	return vol
+}
+
+func AttachVolume(client *gophercloud.ServiceClient, volume *volumes.Volume, server *servers.Server) {
+	fmt.Printf("Attempting to attach volume %s to %s!\n", volume.ID, server.ID)
+	createOpts := volumeattach.CreateOpts{
+		Device:   "/dev/vdc",
+		VolumeID: volume.ID,
+	}
+
+	_, err := volumeattach.Create(client, server.ID, createOpts).Extract()
+	if err != nil {
+		panic(err)
+	}
+	volumes.WaitForStatus(client, volume.ID, "in-use", 600)
 }
