@@ -2,16 +2,19 @@ package ServerTools
 
 import (
 	"fmt"
-	"log"
-
-	"github.com/gophercloud/gophercloud"
+  "github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack/blockstorage/v1/volumes"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/keypairs"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/volumeattach"
+	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/keypairs"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/servers"
+	"html/template"
+	"log"
+	"os"
+	"regexp"
 )
 
-func ListServersInCurrentTenant(client *gophercloud.ServiceClient) {
+func ListServersInCurrentTenant(client *gophercloud.ServiceClient, t string) {
 	// Options for listing servers
 	listOpts := servers.ListOpts{
 		AllTenants: false,
@@ -31,9 +34,45 @@ func ListServersInCurrentTenant(client *gophercloud.ServiceClient) {
 		log.Panic(err)
 	}
 
-	// Print out ever server by name
+
+	//temp = "{{.Name}}\t\t||\t\t{{index .Image `id`}}\t\t||\t\t{{index .Flavor `id`}}\n"
+	var temp string
+	var tmpl *template.Template
+
+	if t != "" {
+		temp = t
+		tmpl, err = template.New("Server").Parse(temp)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		fmt.Println("Server Name \t\t||\t\t\tImage\t\t\t||\t\tFlavor\t\t\t\t||\t\tNetworks")
+		for i := 0; i < 200; i ++ {
+			fmt.Print("=")
+		}
+		fmt.Println()
+	}
+
+
 	for _, server := range allServers {
-		fmt.Printf("Name: %s, Image: %s, Flavor: %s, Networks: %s\n", server.Name, server.Image["id"], server.Flavor["id"], server.Addresses)
+
+		if temp == "" {
+			fmt.Printf("%s\t\t||\t%s\t||\t%s\t||\t", server.Name, server.Image["id"], server.Flavor["id"])
+			var networks string
+			for k, v := range server.Addresses {
+				re := regexp.MustCompile("([0-9]{1,3}[.]?){4}")
+				match := re.Find([]byte(fmt.Sprintf("%s", v)))
+				networks += fmt.Sprintf("%s : %s ", k, match)
+			}
+			fmt.Printf("{ %s }\n", networks)
+		} else {
+			err = tmpl.Execute(os.Stdout, server)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+
+
 	}
 }
 
