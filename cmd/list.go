@@ -18,6 +18,7 @@ package cmd
 import (
 	ServerTools "github.com/hasanaburayyan/openstack-tools/cmd/serverTools"
 	"github.com/spf13/cobra"
+	"strings"
 )
 
 // listCmd represents the list command
@@ -30,11 +31,17 @@ Lists all servers in tenant
 	Run: func(cmd *cobra.Command, args []string) {
 		temp, _ := cmd.Flags().GetString("format")
 		client := ServerTools.GetOSClient()
-		ServerTools.ListServersInCurrentTenant(client, temp)
+		ServerTools.ListServersInCurrentTenant(client, formatTemplate(temp))
 	},
 }
 
 var template string
+
+func formatTemplate(t string) string {
+	t = strings.Replace(t, "\\t", "\t", -2)
+	t = strings.Replace(t, "\\n", "\n", -2)
+	return t
+}
 
 func init() {
 	serverCmd.AddCommand(listCmd)
@@ -49,4 +56,5 @@ func init() {
 	// is called directly, e.g.:
 	// listCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	listCmd.Flags().StringVarP(&template, "format", "f", "", "GO Template Format")
+
 }
