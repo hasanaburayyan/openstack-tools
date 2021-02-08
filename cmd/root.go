@@ -17,6 +17,8 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/hasanaburayyan/openstack-tools/cmd/network"
+	"github.com/hasanaburayyan/openstack-tools/cmd/server"
 	"github.com/spf13/cobra"
 	"os"
 
@@ -60,6 +62,8 @@ func init() {
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
+	rootCmd.AddCommand(server.ServerCmd)
+	rootCmd.AddCommand(network.NetworkCmd)
 
 }
 

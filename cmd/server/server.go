@@ -13,14 +13,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package cmd
+package server
 
 import (
 	"github.com/spf13/cobra"
 )
 
 // serverCmd represents the server command
-var serverCmd = &cobra.Command{
+var ServerCmd = &cobra.Command{
 	Use:   "server",
 	Short: "A brief description of your command",
 	Long: `A longer description that spans multiple lines and likely contains examples
@@ -39,10 +39,10 @@ var (
 	image      string
 	flavor     string
 	volumeName string
+	netName	   string
 )
 
 func init() {
-	rootCmd.AddCommand(serverCmd)
 
 	// Here you will define your flags and configuration settings.
 

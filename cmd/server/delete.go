@@ -13,11 +13,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package cmd
+package server
 
 import (
 	"fmt"
-
 	"github.com/gophercloud/gophercloud/openstack/blockstorage/v2/volumes"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/servers"
 	ServerTools "github.com/hasanaburayyan/openstack-tools/cmd/serverTools"
@@ -57,7 +56,7 @@ var id string
 var deleteVolume bool
 
 func init() {
-	serverCmd.AddCommand(deleteCmd)
+	ServerCmd.AddCommand(deleteCmd)
 
 	// Here you will define your flags and configuration settings.
 

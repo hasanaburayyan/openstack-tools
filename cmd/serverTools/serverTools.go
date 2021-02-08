@@ -1,42 +1,30 @@
 package ServerTools
 
 import (
+	"errors"
 	"fmt"
-  	"github.com/gophercloud/gophercloud"
+	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack/blockstorage/v1/volumes"
-	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/volumeattach"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/keypairs"
+	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/volumeattach"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/servers"
+	"github.com/gophercloud/gophercloud/openstack/networking/v2/networks"
+	"github.com/hasanaburayyan/openstack-tools/cmd/networkTools"
 	"html/template"
 	"log"
 	"os"
 	"regexp"
+	"strings"
 )
 
 func ListServersInCurrentTenant(client *gophercloud.ServiceClient, t string) {
-	// Options for listing servers
-	listOpts := servers.ListOpts{
-		AllTenants: false,
-	}
-
-	// Get all pages of servers
-	allPages, err := servers.List(client, listOpts).AllPages()
-
-	if err != nil {
-		log.Panic(err)
-	}
-
-	// Extract all servers from pages
-	allServers, err := servers.ExtractServers(allPages)
-
-	if err != nil {
-		log.Panic(err)
-	}
+	allServers := getAllServers(client)
 
 
 	//temp = "{{.Name}}\t\t||\t\t{{index .Image `id`}}\t\t||\t\t{{index .Flavor `id`}}\n"
 	var temp string
 	var tmpl *template.Template
+	var err error
 
 	if t != "" {
 		temp = t
@@ -75,6 +63,62 @@ func ListServersInCurrentTenant(client *gophercloud.ServiceClient, t string) {
 	}
 }
 
+func getAllServers(client *gophercloud.ServiceClient) []servers.Server {
+	// Options for listing servers
+	listOpts := servers.ListOpts{
+		AllTenants: false,
+	}
+
+	// Get all pages of servers
+	allPages, err := servers.List(client, listOpts).AllPages()
+
+	if err != nil {
+		log.Panic(err)
+	}
+
+	// Extract all servers from pages
+	allServers, err := servers.ExtractServers(allPages)
+
+	if err != nil {
+		log.Panic(err)
+	}
+
+	return allServers
+}
+
+func FindServersByName(client *gophercloud.ServiceClient, name string) []servers.Server {
+	matchingServers := []servers.Server{}
+	allServers := getAllServers(client)
+
+	for _, server := range allServers {
+		if strings.Contains(server.Name, name) {
+			matchingServers = append(matchingServers, server)
+		}
+	}
+
+	return matchingServers
+}
+
+// FindServerByExactName will search the current tenant for servers matching that name, if more than one server is found
+// an error will be returned to indicate that no unique server could be retrieved. (searching by ID would be required)
+func FindServerByExactName(client *gophercloud.ServiceClient, name string) (servers.Server, error) {
+	allServers := getAllServers(client)
+	var s servers.Server
+	for _, server := range allServers {
+		if server.Name == name {
+			if s.ID != "" {
+				return s, errors.New(fmt.Sprintf("Multiple Servers Found With Name %s!\n", name))
+			} else {
+				s = server
+			}
+		}
+	}
+	if s.ID == "" {
+		return s, errors.New(fmt.Sprintf("No Servers Found With Name %s!\n", name))
+	}
+	return s, nil
+}
+
 func ListAllKeypairs(client *gophercloud.ServiceClient) {
 	allPages, err := keypairs.List(client).AllPages()
 	if err != nil {
@@ -101,14 +145,28 @@ func DeleteServer(client *gophercloud.ServiceClient, serverId string) {
 	fmt.Printf("server %s deleted!", serverId)
 }
 
-func CreateServer(client *gophercloud.ServiceClient, serverName, imageName, flavorName string) *servers.Server {
+func prepareNetworkCreateOpts(networks []networks.Network) []servers.Network {
+	var s []servers.Network
+	for _, n := range networks {
+		s = append(s, servers.Network{
+			UUID: n.ID,
+		})
+	}
+	return s
+}
+
+func CreateServer(client *gophercloud.ServiceClient, serverName, imageName, flavorName string, n []networks.Network) *servers.Server {
+	// prepare network list
+	networkList := prepareNetworkCreateOpts(n)
+	// add tenant opsnet by default
+	opsnet := networkTools.GetTenantOpsNet(networkTools.GetNetworkClient())
+	networkList = append(networkList, servers.Network{UUID: opsnet.ID})
+
 	serverCreateOpts := servers.CreateOpts{
 		Name:      serverName,
 		ImageRef:  imageName,
 		FlavorRef: flavorName,
-		Networks: []servers.Network{
-			servers.Network{UUID: "6353f4fd-0ec8-43cb-aedd-d575d8db1721"},
-		},
+		Networks: networkList,
 		Metadata: map[string]string{
 			"hsa29-test": "true",
 		},

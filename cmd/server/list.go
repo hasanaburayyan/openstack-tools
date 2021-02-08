@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package cmd
+package server
 
 import (
 	ServerTools "github.com/hasanaburayyan/openstack-tools/cmd/serverTools"
@@ -44,7 +44,7 @@ func formatTemplate(t string) string {
 }
 
 func init() {
-	serverCmd.AddCommand(listCmd)
+	ServerCmd.AddCommand(listCmd)
 
 	// Here you will define your flags and configuration settings.
 
