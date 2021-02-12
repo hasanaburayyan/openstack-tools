@@ -36,8 +36,10 @@ to quickly create a Cobra application.`,
 
 var (
 	name       string
-	image      string
-	flavor     string
+	imageID      string
+	imageName	string
+	flavorID     string
+	flavorName	string
 	volumeName string
 	netName	   string
 )

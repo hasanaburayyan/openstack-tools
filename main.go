@@ -15,7 +15,7 @@ limitations under the License.
 */
 package main
 
-import "github.com/hasanaburayyan/openstack-tools/cmd"
+import "github.com/hasanaburayyan/my-openstack-tools/cmd"
 
 func main() {
 	cmd.Execute()

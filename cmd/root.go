@@ -17,8 +17,10 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/hasanaburayyan/openstack-tools/cmd/network"
-	"github.com/hasanaburayyan/openstack-tools/cmd/server"
+	"github.com/hasanaburayyan/my-openstack-tools/cmd/flavor"
+	"github.com/hasanaburayyan/my-openstack-tools/cmd/image"
+	"github.com/hasanaburayyan/my-openstack-tools/cmd/network"
+	"github.com/hasanaburayyan/my-openstack-tools/cmd/server"
 	"github.com/spf13/cobra"
 	"os"
 
@@ -64,6 +66,8 @@ func init() {
 	// when this action is called directly.
 	rootCmd.AddCommand(server.ServerCmd)
 	rootCmd.AddCommand(network.NetworkCmd)
+	rootCmd.AddCommand(image.ImageCmd)
+	rootCmd.AddCommand(flavor.FlavorCmd)
 
 }
 

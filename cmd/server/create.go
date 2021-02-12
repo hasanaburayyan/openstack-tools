@@ -17,8 +17,11 @@ package server
 
 import (
 	"fmt"
-	"github.com/hasanaburayyan/openstack-tools/cmd/networkTools"
-	ServerTools "github.com/hasanaburayyan/openstack-tools/cmd/serverTools"
+	"github.com/gophercloud/gophercloud/openstack/compute/v2/servers"
+	"github.com/hasanaburayyan/my-openstack-tools/cmd/flavorTools"
+	"github.com/hasanaburayyan/my-openstack-tools/cmd/imageTools"
+	"github.com/hasanaburayyan/my-openstack-tools/cmd/networkTools"
+	ServerTools "github.com/hasanaburayyan/my-openstack-tools/cmd/serverTools"
 	"github.com/spf13/cobra"
 	"log"
 )
@@ -32,8 +35,10 @@ see usage below
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		serverName, _ := cmd.Flags().GetString("name")
-		imageName, _ := cmd.Flags().GetString("image")
-		flavorName, _ := cmd.Flags().GetString("flavor")
+		imageID, _ := cmd.Flags().GetString("imageID")
+		imageName, _ := cmd.Flags().GetString("imageName")
+		flavorID, _ := cmd.Flags().GetString("flavorID")
+		flavorName, _ := cmd.Flags().GetString("flavorName")
 		volumeName, _ := cmd.Flags().GetString("volumeName")
 		networkName, _ := cmd.Flags().GetString("networkName")
 
@@ -53,7 +58,31 @@ see usage below
 			log.Panic(fmt.Sprintf("Cannot Find A Network Matching Name: %s!\n", networkName))
 		}
 
-		server := ServerTools.CreateServer(serverClient, serverName, imageName, flavorName, networks)
+		createOpts := servers.CreateOpts{}
+		createOpts.Name = serverName
+		ServerTools.AttachNetworkToOpts(&createOpts, networks)
+		if imageID != "" {
+			createOpts.ImageRef = imageID
+		} else if imageName != "" {
+			image, err := imageTools.GetImageByName(serverClient, imageName)
+			if err != nil {
+				log.Panic(err)
+			}
+			createOpts.ImageRef = image.ID
+		}
+
+		if flavorID != "" {
+			createOpts.FlavorRef = flavorID
+		} else if flavorName != "" {
+			flavor, err := flavorTools.GetFlavorByName(serverClient, flavorName)
+			if err != nil {
+				log.Panic(err)
+			}
+			createOpts.FlavorRef = flavor.ID
+		}
+
+		//server := ServerTools.CreateServer(serverClient, serverName, imageID, flavorID, networks)
+		server := ServerTools.CreateServerWithOptions(serverClient, createOpts)
 
 		if volumeName != "" {
 			volume := ServerTools.CreateVolume(volumeClient, volumeName)
@@ -64,8 +93,10 @@ see usage below
 
 func init() {
 
-	createCmd.PersistentFlags().StringVarP(&image, "image", "i", "", "Image to use")
-	createCmd.PersistentFlags().StringVarP(&flavor, "flavor", "f", "", "Flavor to use")
+	createCmd.PersistentFlags().StringVarP(&imageID, "imageID", "i", "", "Image ID to use (Cannot Be Used With ImageName")
+	createCmd.PersistentFlags().StringVar(&imageName, "imageName", "", "Image Name To Use (Cannot Be Used With ImageID")
+	createCmd.PersistentFlags().StringVarP(&flavorID, "flavorID", "f", "", "Flavor ID to use (Cannot Be Used With FlavorName")
+	createCmd.PersistentFlags().StringVar(&flavorName, "flavorName", "", "Flavor Name To Use (Cannot Be Used With FlavorID")
 	createCmd.PersistentFlags().StringVarP(&name, "name", "n", "", "Name Of Server")
 	createCmd.PersistentFlags().StringVarP(&volumeName, "volumeName", "v", "", "Name of volume")
 	createCmd.PersistentFlags().StringVarP(&netName, "networkName", "x", "", "Name of Network")

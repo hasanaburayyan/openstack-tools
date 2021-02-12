@@ -9,7 +9,7 @@ import (
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/volumeattach"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/servers"
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/networks"
-	"github.com/hasanaburayyan/openstack-tools/cmd/networkTools"
+	"github.com/hasanaburayyan/my-openstack-tools/cmd/networkTools"
 	"html/template"
 	"log"
 	"os"
@@ -153,6 +153,32 @@ func prepareNetworkCreateOpts(networks []networks.Network) []servers.Network {
 		})
 	}
 	return s
+}
+
+func AttachNetworkToOpts(opts *servers.CreateOpts, n []networks.Network) {
+	networkList := prepareNetworkCreateOpts(n)
+	opsnet := networkTools.GetTenantOpsNet(networkTools.GetNetworkClient())
+
+	networkList = append(networkList, servers.Network{UUID: opsnet.ID})
+	opts.Networks = networkList
+}
+
+func CreateServerWithOptions(client *gophercloud.ServiceClient, opts servers.CreateOpts) *servers.Server {
+	createOpts := keypairs.CreateOptsExt{
+		CreateOptsBuilder: opts,
+		KeyName:           "opskey",
+	}
+
+	server, err := servers.Create(client, createOpts).Extract()
+	if err != nil {
+		log.Panic(err)
+	}
+
+	fmt.Println("Waiting For server to transition to ACTIVE, will timeout in 600 seconds")
+	servers.WaitForStatus(client, server.ID, "ACTIVE", 600)
+	fmt.Printf("server %s created!\n", server.ID)
+
+	return server
 }
 
 func CreateServer(client *gophercloud.ServiceClient, serverName, imageName, flavorName string, n []networks.Network) *servers.Server {

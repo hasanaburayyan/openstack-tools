@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"github.com/gophercloud/gophercloud/openstack/blockstorage/v2/volumes"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/servers"
-	ServerTools "github.com/hasanaburayyan/openstack-tools/cmd/serverTools"
+	ServerTools "github.com/hasanaburayyan/my-openstack-tools/cmd/serverTools"
 	"github.com/spf13/cobra"
 )
 

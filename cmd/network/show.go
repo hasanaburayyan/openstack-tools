@@ -2,7 +2,7 @@ package network
 
 import (
 	"fmt"
-	"github.com/hasanaburayyan/openstack-tools/cmd/networkTools"
+	"github.com/hasanaburayyan/my-openstack-tools/cmd/networkTools"
 	"github.com/spf13/cobra"
 	"log"
 )

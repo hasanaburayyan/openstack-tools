@@ -16,7 +16,7 @@ limitations under the License.
 package server
 
 import (
-	ServerTools "github.com/hasanaburayyan/openstack-tools/cmd/serverTools"
+	ServerTools "github.com/hasanaburayyan/my-openstack-tools/cmd/serverTools"
 	"github.com/spf13/cobra"
 	"strings"
 )
