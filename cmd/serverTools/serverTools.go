@@ -18,7 +18,7 @@ import (
 )
 
 func ListServersInCurrentTenant(client *gophercloud.ServiceClient, t string) {
-	allServers := getAllServers(client)
+	allServers := GetAllServers(client)
 
 
 	//temp = "{{.Name}}\t\t||\t\t{{index .Image `id`}}\t\t||\t\t{{index .Flavor `id`}}\n"
@@ -63,7 +63,7 @@ func ListServersInCurrentTenant(client *gophercloud.ServiceClient, t string) {
 	}
 }
 
-func getAllServers(client *gophercloud.ServiceClient) []servers.Server {
+func GetAllServers(client *gophercloud.ServiceClient) []servers.Server {
 	// Options for listing servers
 	listOpts := servers.ListOpts{
 		AllTenants: false,
@@ -88,7 +88,7 @@ func getAllServers(client *gophercloud.ServiceClient) []servers.Server {
 
 func FindServersByName(client *gophercloud.ServiceClient, name string) []servers.Server {
 	matchingServers := []servers.Server{}
-	allServers := getAllServers(client)
+	allServers := GetAllServers(client)
 
 	for _, server := range allServers {
 		if strings.Contains(server.Name, name) {
@@ -102,7 +102,7 @@ func FindServersByName(client *gophercloud.ServiceClient, name string) []servers
 // FindServerByExactName will search the current tenant for servers matching that name, if more than one server is found
 // an error will be returned to indicate that no unique server could be retrieved. (searching by ID would be required)
 func FindServerByExactName(client *gophercloud.ServiceClient, name string) (servers.Server, error) {
-	allServers := getAllServers(client)
+	allServers := GetAllServers(client)
 	var s servers.Server
 	for _, server := range allServers {
 		if server.Name == name {
